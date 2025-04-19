@@ -1,0 +1,48 @@
+# ───────── Core Node / pnpm / npm ─────────
+node_modules/          # installed packages
+.pnpm-store/           # pnpm’s global store (if you use pnpm)
+.package-lock.json*
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.tgz                  # npm pack output
+
+# ───────── Runtime & logs ─────────
+logs/
+*.log
+*.pid
+*.pid.lock
+
+# ───────── Env & secrets ─────────
+.env                   # real secrets stay local
+.env.*                 # .env.local, .env.production, etc.
+
+# ───────── Testing & coverage ─────────
+coverage/              # Jest, nyc, or Playwright coverage
+.nyc_output/
+
+# ───────── Build artifacts ─────────
+dist/
+build/
+*.tsbuildinfo
+
+# ───────── Editor / IDE cruft ─────────
+.vscode/
+.idea/
+*.sw?
+*.swp
+*.swo
+*~
+
+# ───────── OS‑specific noise ─────────
+.DS_Store
+Thumbs.db
+
+# ───────── Container orchestration ─────────
+docker-compose.override.yml
+.env.docker
+
+# ───────── Misc – comment out if you use these ─────────
+# .eslintcache
+# .turbo     # TurboRepo cache
+# .next/     # Next.js build (if you add a UI later)
