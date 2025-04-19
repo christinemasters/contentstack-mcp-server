@@ -10,7 +10,8 @@
     "start": "node mcp-server.js",
     "dev": "nodemon mcp-server.js",
     "test-server": "node server.js",
-    "minimal-mcp": "node minimal-mcp.js"
+    "minimal-mcp": "node minimal-mcp.js",
+    "simple-sse": "node simple-sse.js"
   },
   "dependencies": {
     "@contentstack/management": "^1.20.2",

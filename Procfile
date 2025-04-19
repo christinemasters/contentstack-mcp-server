@@ -1,1 +1,1 @@
-web: node minimal-mcp.js
+web: node simple-sse.js
