@@ -34,9 +34,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Basic SSE endpoint - both at /sse for our code and at /mcp for supermachines.ai
-app.get(['/sse', '/mcp'], (req, res) => {
-  console.log('SSE connection requested');
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  next();
+});
+
+// Basic SSE endpoint - try all possible endpoint paths
+app.get(['/sse', '/mcp', '/', '/events', '/stream'], (req, res) => {
+  console.log(`SSE connection requested on path: ${req.path}`);
+  console.log(`Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
   
   // Set SSE headers
   res.writeHead(200, {
