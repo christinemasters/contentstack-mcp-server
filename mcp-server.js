@@ -1,14 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
+import { McpServer, HttpServerTransport } from "@modelcontextprotocol/sdk";
 import Contentstack from "contentstack";
 import contentstackManagement from "@contentstack/management";
+import { z } from "zod";
 
-// Load .env
 dotenv.config();
-
-// Pull PORT from the env (injected by Supermachine via {{supermachinePort}})
-// or default to 3000 if you run locally
 const PORT = process.env.PORT || 3000;
 
 // Then read your other env vars
