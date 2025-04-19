@@ -18,11 +18,22 @@ const PORT = process.env.PORT || 3000;
 const { STACK_API_KEY, DELIVERY_TOKEN, ENVIRONMENT, MANAGEMENT_TOKEN } =
   process.env;
 
-// sanity‑check
-if (!STACK_API_KEY || !DELIVERY_TOKEN || !ENVIRONMENT) {
-  console.error("Missing one of STACK_API_KEY, DELIVERY_TOKEN, ENVIRONMENT");
+// sanity‑check with more detailed error messages
+if (!STACK_API_KEY) {
+  console.error("Missing required environment variable: STACK_API_KEY");
   process.exit(1);
 }
+if (!DELIVERY_TOKEN) {
+  console.error("Missing required environment variable: DELIVERY_TOKEN");
+  process.exit(1);
+}
+if (!ENVIRONMENT) {
+  console.error("Missing required environment variable: ENVIRONMENT");
+  process.exit(1);
+}
+
+console.log(`Starting MCP server with environment: ${ENVIRONMENT}`);
+console.log(`Using PORT: ${PORT}`);
 
 // init MCP server
 const mcp = new McpServer({ name: "Contentstack MCP", version: "0.1.0" });
@@ -72,25 +83,34 @@ app.use(express.static(path.join(process.cwd(), "public"))); // if you have ai-p
 const transports = {};
 
 // SSE endpoint for remote MCP clients
-app.get("/sse", (req, res) => {
-  const transport = new SSEServerTransport('/messages', res);
-  
-  // Store the transport by session ID
-  const sessionId = transport.sessionId;
-  transports[sessionId] = transport;
-  
-  // Set up onclose handler to clean up transport when closed
-  transport.onclose = () => {
-    console.log(`SSE transport closed for session ${sessionId}`);
-    delete transports[sessionId];
-  };
-  
-  // Connect the transport to the MCP server
-  mcp.connect(transport);
-  
-  // Start the SSE transport to begin streaming
-  transport.start();
-  console.log(`Established SSE stream with session ID: ${sessionId}`);
+app.get("/sse", async (req, res) => {
+  console.log('Received GET request to /sse (establishing SSE stream)');
+  try {
+    // Create a new SSE transport
+    const transport = new SSEServerTransport('/messages', res);
+    
+    // Store the transport by session ID
+    const sessionId = transport.sessionId;
+    transports[sessionId] = transport;
+    
+    // Set up onclose handler to clean up transport when closed
+    transport.onclose = () => {
+      console.log(`SSE transport closed for session ${sessionId}`);
+      delete transports[sessionId];
+    };
+    
+    // Connect the transport to the MCP server
+    await mcp.connect(transport);
+    
+    // Start the SSE transport to begin streaming
+    await transport.start();
+    console.log(`Established SSE stream with session ID: ${sessionId}`);
+  } catch (error) {
+    console.error('Error establishing SSE stream:', error);
+    if (!res.headersSent) {
+      res.status(500).send('Error establishing SSE stream');
+    }
+  }
 });
 
 // Messages endpoint for receiving client JSON-RPC requests
@@ -126,7 +146,19 @@ app.post('/messages', async (req, res) => {
 // health check
 app.get("/ping", (_, res) => res.json({ status: "ok" }));
 
-app.listen(PORT, () => {
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Keep running despite the error
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Keep running despite the error
+});
+
+// Start the server
+const server = app.listen(PORT, () => {
   console.log(`MCP Server listening on port ${PORT}`);
 });
 
@@ -145,7 +177,23 @@ process.on('SIGINT', async () => {
     }
   }
   
-  await mcp.close();
-  console.log('Server shutdown complete');
-  process.exit(0);
+  // Close the MCP server
+  try {
+    await mcp.close();
+  } catch (error) {
+    console.error('Error closing MCP server:', error);
+  }
+  
+  // Close the HTTP server
+  server.close(() => {
+    console.log('HTTP server closed');
+    console.log('Server shutdown complete');
+    process.exit(0);
+  });
+  
+  // Force exit after timeout if graceful shutdown fails
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
 });
