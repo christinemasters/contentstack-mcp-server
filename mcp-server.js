@@ -1,19 +1,19 @@
 import express from "express";
 import dotenv from "dotenv";
-import { McpServer } from "@modelcontextprotocol/sdk";
-import { HttpServerTransport } from "@modelcontextprotocol/sdk";
+import path from "path";
 import Contentstack from "contentstack";
 import contentstackManagement from "@contentstack/management";
-import { z } from "zod";
 
+// Load .env
 dotenv.config();
-const {
-  STACK_API_KEY,
-  DELIVERY_TOKEN,
-  ENVIRONMENT,
-  MANAGEMENT_TOKEN,
-  PORT = 3000,
-} = process.env;
+
+// Pull PORT from the env (injected by Supermachine via {{supermachinePort}})
+// or default to 3000 if you run locally
+const PORT = process.env.PORT || 3000;
+
+// Then read your other env vars
+const { STACK_API_KEY, DELIVERY_TOKEN, ENVIRONMENT, MANAGEMENT_TOKEN } =
+  process.env;
 
 if (!STACK_API_KEY || !DELIVERY_TOKEN || !ENVIRONMENT) {
   console.error("Missing STACK_API_KEY, DELIVERY_TOKEN or ENVIRONMENT");
@@ -81,5 +81,5 @@ app.get("/sse", (req, res) => {
 app.get("/ping", (_, res) => res.json({ status: "ok" }));
 
 app.listen(PORT, () => {
-  console.log(`MCP Server listening on http://localhost:${PORT}`);
+  console.log(`MCP Server listening on port ${PORT}`);
 });
